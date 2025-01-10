@@ -5,7 +5,7 @@ const React = (() => {
   let currentIndex = 0;
 
   // Helper function to create DOM elements from JSX-like structures
-  function createElement(type, props, ...children) {
+  function basicElement(type, props, ...children) {
     const element = document.createElement(type);
 
     if (props) {
@@ -25,67 +25,57 @@ const React = (() => {
 
       const node =
         typeof child === "object" ? child : document.createTextNode(child);
-      element.appendChild(node);
+      if (node.render) element.appendChild(node.render());
+      else element.appendChild(node);
     });
 
     return element;
   }
 
   // Component instance creator with DOM rendering
-  function createComponent(
-    ComponentFunction,
-    containerElement = document.getElementById("root")
-  ) {
-    const instance = {
+  function createElement(type, props, ...children) {
+    if (typeof type !== "function")
+      return basicElement(type, props, ...children);
+    return {
       id: Symbol("component-instance"),
-      type: ComponentFunction.name,
+      type: type,
       reRender: true,
-      container: containerElement,
-      currentDOMElement: null,
-      render: function (...args) {
-        if (!this.reRender) return;
+      domElement: null,
+      render: function () {
+        /**
+         * Sets a reference for the component being rendered and return a dom element for this component
+         *  */
+        if (!this.reRender) return this.domElement;
         this.reRender = false;
         startRender(this);
 
         // Capture the returned JSX and convert to DOM
-        const result = ComponentFunction.apply(this, args);
-
+        const result = type({ ...props, children });
+        let domElement;
         if (result) {
-          // Clear previous render
-          if (this.currentDOMElement) {
-            this.currentDOMElement.remove();
-          }
-
-          // Handle array of elements or single element
-          if (Array.isArray(result)) {
-            const wrapper = document.createElement("div");
-            result.forEach((element) => {
-              if (element instanceof HTMLElement) {
-                wrapper.appendChild(element);
-              }
-            });
-            this.currentDOMElement = wrapper;
-          } else if (result instanceof HTMLElement) {
-            this.currentDOMElement = result;
+          if (result instanceof HTMLElement) {
+            domElement = result;
           } else if (typeof result === "string") {
-            this.currentDOMElement = document.createTextNode(result);
-          }
-
-          if (this.currentDOMElement) {
-            this.container.appendChild(this.currentDOMElement);
+            domElement = document.createTextNode(result);
+          } else {
+            result.render();
           }
         }
+        this.domElement = domElement;
+        return domElement;
       },
     };
-
-    instance.render();
-    return instance.currentDOMElement;
   }
 
   // Reset index when starting to render a component instance
   function startRender(instance) {
     currentInstance = instance;
     currentIndex = 0;
+  }
+
+  function render(instance, parent) {
+    if (instance.render) parent.appendChild(instance.render());
+    else parent.appendChild(instance);
   }
 
   function useState(initialValue) {
@@ -108,7 +98,8 @@ const React = (() => {
           : newValue;
       instance.reRender = true;
       setTimeout(() => {
-        instance.render();
+        let old = instance.domElement;
+        old.parentNode.replaceChild(instance.render(), old);
       }, 0);
     };
 
@@ -144,6 +135,5 @@ const React = (() => {
     }
   }
 
-  return { createComponent, useState, useEffect, createElement };
+  return { createElement, useState, useEffect, render };
 })();
-

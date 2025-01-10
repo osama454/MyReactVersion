@@ -1,18 +1,18 @@
 // demo.js
-const { createComponent, useState, useEffect, createElement } = React;
+const { createElement, useState, useEffect, render } = React;
 
 function F1() {
   console.log("Re render F1");
   const [count, setCount] = useState(0);
   const [text, setText] = useState("hello");
 
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setCount((c) => c + 1);
-  //     setText("counter= " + count);
-  //   }, 1000);
-  //   return () => clearInterval(interval);
-  // }, [count]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((c) => c + 1);
+      setText("counter= " + count);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [count]);
 
   return createElement(
     "div",
@@ -31,22 +31,22 @@ function F1() {
   );
 }
 
-function F2() {
+function F2(props, child) {
   console.log("Re render F2");
   const [count, setCount] = useState(0);
-  const [text, setText] = useState("hello");
+  const [text, setText] = useState(child);
 
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setCount((c) => c + 1);
-  //     setText("counter= " + count);
-  //   }, 1000);
-  //   return () => clearInterval(interval);
-  // }, [count]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((c) => c + 1);
+      setText("counter= " + count);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [count]);
 
   return createElement(
     "div",
-    { className: "component" },
+    null,
     createElement("h2", null, "Component F2"),
     createElement("p", null, `Count: ${count}`),
     createElement("p", null, text),
@@ -63,15 +63,15 @@ function F2() {
 
 function T() {
   console.log("Re render T");
-  return [
-    createElement(
-      "div",
-      { className: "container" },
-      createComponent(F1),
-      createComponent(F2)
-    ),
-  ];
+  return createElement(F2, null, "hello");
 }
 
+function Div({children, ...props}) {
+  return createElement(
+    "div",
+    props,
+    children
+  );
+}
 // Initialize the app
-createComponent(T);
+render(createElement('div', {className:"component"}, createElement(F2,null, "how are u"), createElement(F1,null, "how are u2")), document.getElementById("root"));
