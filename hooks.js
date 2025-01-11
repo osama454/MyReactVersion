@@ -238,6 +238,29 @@ const React = (() => {
     return componentEffects[effectIndex].callback;
   }
 
+  function useMemo(callback, dependencies) {
+    if (!componentStates.has(currentInstance.id)) {
+      componentStates.set(currentInstance.id, []);
+    }
+
+    const componentEffects = componentStates.get(currentInstance.id);
+    const effectIndex = currentIndex++;
+
+    const oldDependencies = componentEffects[effectIndex]?.dependencies;
+    const hasChanged =
+      !oldDependencies ||
+      !dependencies ||
+      dependencies.some((dep, i) => dep !== oldDependencies[i]);
+
+    if (hasChanged) {
+      componentEffects[effectIndex] = {
+        dependencies,
+        results: callback(),
+      };
+    }
+    return componentEffects[effectIndex].results;
+  }
+
   function createContext(defaultValue) {
     const contextObj = {
       default: defaultValue,
@@ -310,6 +333,7 @@ const React = (() => {
     useContext,
     memo,
     useCallback,
+    useMemo,
     render,
   };
 })();

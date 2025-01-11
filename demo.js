@@ -8,49 +8,52 @@ const {
   useReducer,
   createContext,
   useContext,
+  useCallback,
   memo,
+  useMemo,
 } = React;
+const App = () => {
+  const [count, setCount] = useState(0);
+  const [todos, setTodos] = useState([]);
+  const calculation = useMemo(() => expensiveCalculation(count), [count]);
 
-function f1({ val }) {
-  useEffect(() => {
-    console.log(val, "f1");
-  }, []);
-  return `${val}`;
-}
+  const increment = () => {
+    setCount((c) => c + 1);
+  };
+  const addTodo = () => {
+    setTodos((t) => [...t, "New Todo"]);
+  };
 
-function f2({ val }) {
-  useEffect(() => {
-    console.log(val, "f2");
-  }, []);
-  return `${val}`;
-}
+  return createElement(
+    "div",
+    null,
+    createElement(
+      "div",
+      null,
+      createElement("h2", null, "My Todos"),
+      todos.map((todo, index) => createElement("p", { key: index }, todo)),
+      createElement("button", { onClick: addTodo }, "Add Todo")
+    ),
+    createElement("hr"),
+    createElement(
+      "div",
+      null,
+      "Count: ",
+      count,
+      createElement("button", { onClick: increment }, "+"),
+      createElement("h2", null, "Expensive Calculation"),
+      calculation
+    )
+  );
+};
 
-function Div({ props, children }) {
-  return createElement("div", props, ...children);
-}
-function App() {
-  let [val, setVal] = useState(0);
-  useEffect(() => {
-    setInterval(() => {
-      val++;
-      setVal(val);
-    }, 1000);
-  }, []);
-  return val % 2 == 0
-    ? createElement(
-        Div,
-        null,
-        createElement(f2, { val }),
-        "even",
-        createElement(f1, { val: val })
-      )
-    : createElement(
-        Div,
-        null,
-        createElement(f1, { val: val }),
-        "odd",
-        //createElement(f2, { val: val })
-      );
-}
+const expensiveCalculation = (num) => {
+  console.log("Calculating...");
+  for (let i = 0; i < 1000000000; i++) {
+    num += 1;
+  }
+  return num;
+};
+
 // Initialize the app
 render(createElement(App), document.getElementById("root"));
