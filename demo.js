@@ -1,5 +1,14 @@
 // demo.js
-const { createElement, useState, useEffect, render } = React;
+const {
+  render,
+  createElement,
+  useState,
+  useEffect,
+  useRef,
+  useReducer,
+  createContext,
+  useContext,
+} = React;
 
 function F1() {
   console.log("Re render F1");
@@ -66,12 +75,86 @@ function T() {
   return createElement(F2, null, "hello");
 }
 
-function Div({children, ...props}) {
+function Div({ children, ...props }) {
+  return createElement("div", props, children);
+}
+
+function Effect() {
+  let [state, setState] = useState(0);
+
+  useEffect(() => {
+    setInterval(() => {
+      console.log(state);
+      state += 1;
+      setState(state);
+    }, 1000);
+  }, []);
+  return createElement("div", null, state);
+}
+
+function ref() {
+  const [inputValue, setInputValue] = useState("");
+  const count = useRef(0);
+
+  //useEffect(() => {
+  count.current = count.current + 1;
+  //});
   return createElement(
     "div",
-    props,
-    children
+    null,
+    createElement("input", {
+      type: "text",
+      onChange: (e) => {
+        console.log("change");
+        setInputValue(e.target.value);
+      },
+      value: inputValue,
+    }),
+    createElement("h1", null, count.current)
+  );
+}
+
+function reducer() {
+  const [state, dispatch] = useReducer((state, action) => {
+    switch (action) {
+      case "increment":
+        return state + 1;
+      case "decrement":
+        return state - 1;
+      default:
+        return state;
+    }
+  }, 10);
+  return createElement(
+    "div",
+    null,
+    createElement("h1", null, state),
+    createElement(
+      "button",
+      { onClick: () => dispatch("increment") },
+      "increment"
+    ),
+    createElement(
+      "button",
+      { onClick: () => dispatch("decrement") },
+      "decrement"
+    )
+  );
+}
+
+let myContext = createContext("osama");
+function child() {
+  let state = useContext(myContext);
+  return createElement("h1", null, state);
+}
+function context() {
+  const [state, setState] = useState("adel");
+  return createElement(
+    "div",
+    null,
+    createElement(myContext.Provider, { value: state }, createElement(child)),
+    createElement(child)
   );
 }
 // Initialize the app
-render(createElement('div', {className:"component"}, createElement(F2,null, "how are u"), createElement(F1,null, "how are u2")), document.getElementById("root"));
+render(createElement(context), document.getElementById("root"));

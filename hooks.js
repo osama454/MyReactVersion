@@ -19,7 +19,7 @@ const React = (() => {
         }
       });
     }
-
+    if (props && props.ref) props.ref.current = element;
     children.flat().forEach((child) => {
       if (child === null || child === undefined) return;
 
@@ -62,6 +62,7 @@ const React = (() => {
           }
         }
         this.domElement = domElement;
+        if (props && props.ref) props.ref.current = domElement;
         return domElement;
       },
     };
@@ -105,6 +106,44 @@ const React = (() => {
 
     return [componentState[stateIndex], setState];
   }
+  function useReducer(reducer, initialValue) {
+    let instance = currentInstance;
+    if (!componentStates.has(instance.id)) {
+      componentStates.set(instance.id, []);
+    }
+
+    const componentState = componentStates.get(instance.id);
+    const stateIndex = currentIndex++;
+
+    if (componentState.length <= stateIndex) {
+      componentState.push(initialValue);
+    }
+
+    const dispatch = (action) => {
+      componentState[stateIndex] = reducer(componentState[stateIndex], action);
+      instance.reRender = true;
+      setTimeout(() => {
+        let old = instance.domElement;
+        old.parentNode.replaceChild(instance.render(), old);
+      }, 0);
+    };
+
+    return [componentState[stateIndex], dispatch];
+  }
+  function useRef(initialValue) {
+    let instance = currentInstance;
+    if (!componentStates.has(instance.id)) {
+      componentStates.set(instance.id, []);
+    }
+
+    const componentState = componentStates.get(instance.id);
+    const stateIndex = currentIndex++;
+
+    if (componentState.length <= stateIndex) {
+      componentState.push({ current: initialValue });
+    }
+    return componentState[stateIndex];
+  }
 
   function useEffect(callback, dependencies) {
     if (!componentStates.has(currentInstance.id)) {
@@ -135,5 +174,33 @@ const React = (() => {
     }
   }
 
-  return { createElement, useState, useEffect, render };
+  function createContext(defaultValue) {
+    const contextObj = {
+      default: defaultValue,
+      valueStack: [],
+      Provider({ value, children }) {
+        // Store the value directly on contextObj instead of using 'this'
+        contextObj.valueStack.push(value);
+        let element = createElement("div", null, ...children);
+        contextObj.valueStack.pop();
+        return element;
+      },
+    };
+    return contextObj;
+  }
+  function useContext(context) {
+    return context.valueStack.length > 0
+      ? context.valueStack[context.valueStack.length - 1]
+      : context.default;
+  }
+  return {
+    createElement,
+    useState,
+    useEffect,
+    useRef,
+    useReducer,
+    createContext,
+    useContext,
+    render,
+  };
 })();
