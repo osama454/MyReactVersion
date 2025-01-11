@@ -7,7 +7,7 @@ const React = (() => {
   // Helper function to create DOM elements from JSX-like structures
   function basicElement(type, props, ...children) {
     const element = document.createElement(type);
-
+    let component = currentInstance;
     if (props) {
       Object.entries(props).forEach(([key, value]) => {
         if (key === "className") {
@@ -25,22 +25,51 @@ const React = (() => {
 
       const node =
         typeof child === "object" ? child : document.createTextNode(child);
-      if (node.render) element.appendChild(node.render());
-      else element.appendChild(node);
+      if (node.render) {
+        element.appendChild(node.render());
+      } else element.appendChild(node);
     });
-
+    for (const key in component.childs) {
+      let remove = component.childs[key].ids.splice(component.childs[key].indx);
+      component.childs[key].indx = 0;
+      for (const key of remove) {
+        componentStates.delete(key);
+      }
+    }
     return element;
   }
 
   // Component instance creator with DOM rendering
   function createElement(type, props, ...children) {
+    let symbol = Symbol("component-instance");
+    if (currentInstance && typeof type == "function") {
+      let comp = currentInstance.childs[type];
+      if (comp) {
+        let indx = comp.indx;
+        let ids = comp.ids;
+        let id = ids[indx];
+        if (!id) {
+          ids[indx] = symbol;
+        } else {
+          symbol = ids[indx];
+        }
+        comp.indx++;
+      } else {
+        currentInstance.childs[type] = {
+          indx: 1,
+          ids: [symbol],
+        };
+      }
+    }
     if (typeof type !== "function")
       return basicElement(type, props, ...children);
+
     return {
-      id: Symbol("component-instance"),
+      id: symbol,
       type: type,
       reRender: true,
       domElement: null,
+      childs: {},
       render: function () {
         /**
          * Sets a reference for the component being rendered and return a dom element for this component
@@ -61,6 +90,13 @@ const React = (() => {
           } else if (typeof result === "string") {
             domElement = document.createTextNode(result);
           } else {
+            for (const key in this.childs) {
+              let remove = this.childs[key].ids.splice(this.childs[key].indx);
+              this.childs[key].indx = 0;
+              for (const key of remove) {
+                componentStates.delete(key);
+              }
+            }
             domElement = result.render();
           }
         }
@@ -179,6 +215,29 @@ const React = (() => {
     }
   }
 
+  function useCallback(callback, dependencies) {
+    if (!componentStates.has(currentInstance.id)) {
+      componentStates.set(currentInstance.id, []);
+    }
+
+    const componentEffects = componentStates.get(currentInstance.id);
+    const effectIndex = currentIndex++;
+
+    const oldDependencies = componentEffects[effectIndex]?.dependencies;
+    const hasChanged =
+      !oldDependencies ||
+      !dependencies ||
+      dependencies.some((dep, i) => dep !== oldDependencies[i]);
+
+    if (hasChanged) {
+      componentEffects[effectIndex] = {
+        dependencies,
+        callback,
+      };
+    }
+    return componentEffects[effectIndex].callback;
+  }
+
   function createContext(defaultValue) {
     const contextObj = {
       default: defaultValue,
@@ -250,6 +309,7 @@ const React = (() => {
     createContext,
     useContext,
     memo,
+    useCallback,
     render,
   };
 })();
