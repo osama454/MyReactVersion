@@ -50,7 +50,10 @@ const React = (() => {
         startRender(this);
 
         // Capture the returned JSX and convert to DOM
-        const result = type({ ...props, children });
+        const result =
+          children.length < 2
+            ? type({ ...props, children: children[0] })
+            : type({ ...props, children });
         let domElement;
         if (result) {
           if (result instanceof HTMLElement) {
@@ -93,10 +96,12 @@ const React = (() => {
     }
 
     const setState = (newValue) => {
+      let old = componentState[stateIndex];
       componentState[stateIndex] =
         typeof newValue === "function"
           ? newValue(componentState[stateIndex])
           : newValue;
+      if (componentState[stateIndex] == old) return;
       instance.reRender = true;
       setTimeout(() => {
         let old = instance.domElement;
@@ -193,6 +198,49 @@ const React = (() => {
       ? context.valueStack[context.valueStack.length - 1]
       : context.default;
   }
+
+  function memo(Component, areEqual = defaultAreEqual) {
+    // Store these in closure instead of using 'this'
+    let prevProps = null;
+    let prevResult = null;
+
+    return function MemoComponent(props) {
+      // First render
+      if (!prevResult) {
+        prevProps = props;
+        prevResult = Component(props);
+        return prevResult;
+      }
+
+      // Compare props
+      if (areEqual(prevProps, props)) {
+        return prevResult;
+      }
+
+      // Update stored values if props changed
+      prevProps = props;
+      prevResult = Component(props);
+      return prevResult;
+    };
+  }
+
+  // Default comparison function
+  function defaultAreEqual(prevProps, nextProps) {
+    if (nextProps === prevProps) return true;
+    let prevKeys = Object.keys(prevProps);
+    let nextKeys = Object.keys(nextProps);
+    if (prevKeys.length != nextKeys.length) {
+      prevProps = nextProps;
+      return false;
+    }
+    for (const key in prevProps) {
+      if (prevProps[key] != nextProps[key]) {
+        prevProps = nextProps;
+        return false;
+      }
+    }
+    return true;
+  }
   return {
     createElement,
     useState,
@@ -201,6 +249,7 @@ const React = (() => {
     useReducer,
     createContext,
     useContext,
+    memo,
     render,
   };
 })();

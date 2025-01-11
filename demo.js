@@ -8,6 +8,7 @@ const {
   useReducer,
   createContext,
   useContext,
+  memo,
 } = React;
 
 function F1() {
@@ -156,5 +157,33 @@ function context() {
     createElement(child)
   );
 }
+
+const memoizedComponent = (({ state }) => {
+  console.log("render memoizedComponent");
+  return createElement("p", null, "memoizedComponent:" + state.join('\n*'));
+});
+function testMemo() {
+  console.log("App");
+  let [state, setState] = useState([]);
+  let [val, setVal] = useState(0);
+
+  useEffect(() => {
+    setInterval(() => {
+      val++;
+      setVal(val);
+    }, 2000);
+
+    setInterval(() => {
+      state.push(0)
+      setState(state);
+    }, 1000);
+  }, []);
+  return createElement(
+    "div",
+    null,
+    createElement("p", null, `val:` + val),
+    createElement(memoizedComponent, { state })
+  );
+}
 // Initialize the app
-render(createElement(context), document.getElementById("root"));
+render(createElement(testMemo), document.getElementById("root"));
