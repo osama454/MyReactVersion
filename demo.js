@@ -158,32 +158,49 @@ function context() {
   );
 }
 
-const memoizedComponent = (({ state }) => {
+const memoizedComponent = memo(({ state }) => {
   console.log("render memoizedComponent");
-  return createElement("p", null, "memoizedComponent:" + state.join('\n*'));
+  return createElement("p", null, "memoizedComponent:" + state.join("\n*"));
 });
 function testMemo() {
   console.log("App");
   let [state, setState] = useState([]);
   let [val, setVal] = useState(0);
-
+  let myElement;
   useEffect(() => {
+    myElement = createElement("p", null, "hi");
     setInterval(() => {
       val++;
       setVal(val);
     }, 2000);
 
     setInterval(() => {
-      state.push(0)
-      setState(state);
+      // state.push(0)
+      // setState(state);
     }, 1000);
   }, []);
   return createElement(
     "div",
     null,
     createElement("p", null, `val:` + val),
-    createElement(memoizedComponent, { state })
+    createElement(memoizedComponent, { state }, myElement)
   );
 }
+function f2({ val }) {
+  useEffect(()=>{
+    console.log(val);
+  },[])
+  return `${val}`;
+}
+function f1() {
+  let [val, setVal] = useState(0);
+  useEffect(() => {
+    setInterval(() => {
+      val++;
+      setVal(val);
+    }, 1000);
+  }, []);
+  return createElement(f2, { val });
+}
 // Initialize the app
-render(createElement(testMemo), document.getElementById("root"));
+render(createElement(f1), document.getElementById("root"));

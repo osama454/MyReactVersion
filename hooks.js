@@ -61,7 +61,7 @@ const React = (() => {
           } else if (typeof result === "string") {
             domElement = document.createTextNode(result);
           } else {
-            result.render();
+            domElement = result.render();
           }
         }
         this.domElement = domElement;
