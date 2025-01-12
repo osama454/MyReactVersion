@@ -1,3 +1,4 @@
-let a = [1,2,3]
-console.log(a.splice(1));
-console.log(a);
+olddependencies=[1,2,3]
+dependencies=[1,2,3,4]
+
+console.log(dependencies.some((dep, i) => dep !== olddependencies[i]));
