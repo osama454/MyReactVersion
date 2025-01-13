@@ -1,5 +1,5 @@
 // demo.js
-const {
+import {
   render,
   createElement,
   useState,
@@ -11,7 +11,7 @@ const {
   useCallback,
   memo,
   useMemo,
-} = React;
+}from './react.js';
 
 function F({ name, s }) {
   const [count, setCount] = useState(s);

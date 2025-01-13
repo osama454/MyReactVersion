@@ -120,24 +120,24 @@ const React = (() => {
             ? type({ ...props, children: children[0] })
             : type({ ...props, children });
 
-        if (this.child.type == result.type) {
-          let key1 = this.child.props ? this.child.props.key : null;
-          let key2 = result.props ? result.props.key : null;
-          if (key1 == key2) {
-            result.id = this.child.id;
-            result.child = this.child.child;
-            result.keys = this.child.keys;
-          }
-        } else if (this.child.id) {
-          cleanComponent([this.child.id]);
-          this.child = result;
-        } else {
-          this.child = result;
-        }
         let domElement;
         if (typeof result === "string") {
           domElement = document.createTextNode(result);
         } else {
+          if (this.child.type == result.type) {
+            let key1 = this.child.props ? this.child.props.key : null;
+            let key2 = result.props ? result.props.key : null;
+            if (key1 == key2) {
+              result.id = this.child.id;
+              result.child = this.child.child;
+              result.keys = this.child.keys;
+            }
+          } else if (this.child.id) {
+            cleanComponent([this.child.id]);
+            this.child = result;
+          } else {
+            this.child = result;
+          }
           domElement = result.render();
         }
 
@@ -360,3 +360,19 @@ const React = (() => {
     render,
   };
 })();
+
+export const {
+  createElement,
+  useState,
+  useEffect,
+  useRef,
+  useReducer,
+  createContext,
+  useContext,
+  memo,
+  useCallback,
+  useMemo,
+  render,
+} = React;
+
+export default React;
