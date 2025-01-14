@@ -346,6 +346,9 @@ const React = (() => {
     }
     return true;
   }
+  function Fragment(children=[]){
+    return createElement('fragment', null, ...children)
+  }
   return {
     createElement,
     useState,
@@ -358,11 +361,13 @@ const React = (() => {
     useCallback,
     useMemo,
     render,
+    Fragment
   };
 })();
 
 export const {
   createElement,
+  Fragment,
   useState,
   useEffect,
   useRef,

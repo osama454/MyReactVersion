@@ -1,99 +1,3 @@
-// preprocessor.js
-
-// Main function to start the preprocessing
-async function initPreprocessing() {
-  // Query all scripts with type 'text/process'
-  const processScripts = document.querySelectorAll('script[type="text/jsx"]');
-
-  // Create import map element
-  const importMap = document.createElement("script");
-  importMap.type = "importmap";
-  importMap.textContent = JSON.stringify({ imports: {} });
-  document.head.appendChild(importMap);
-
-  // Process each script
-  for (const script of processScripts) {
-    await processScript(script);
-  }
-}
-
-// Process individual script
-async function processScript(script) {
-  let sourceCode = "";
-
-  // Get source from src attribute if exists
-  if (script.src) {
-    const response = await fetch(script.src);
-    sourceCode += await response.text();
-  }
-
-  // Add inline code if exists
-  if (script.textContent) {
-    sourceCode += script.textContent;
-  }
-
-  // Process the source code
-  const processedCode = await processCodeAndDependencies(sourceCode);
-
-  // Replace the original script with processed version
-  const newScript = document.createElement("script");
-  newScript.type = "module";
-  newScript.textContent = processedCode;
-  if (script.parentNode && script.parentNode.contains(script)) {
-    script.parentNode.replaceChild(newScript, script);
-  }
-}
-
-// Process code and handle dependencies recursively
-async function processCodeAndDependencies(code, processedFiles = new Set()) {
-  // Process the current code
-  let processedCode = process(code);
-
-  // Find all import statements
-  const importRegex = /import\s+(?:[\w\s{},]*\s+from\s+)?['"]([^'"]+)['"]/g;
-  const imports = [...processedCode.matchAll(importRegex)];
-
-  // Process each import
-  for (const [, path] of imports) {
-    if (!processedFiles.has(path)) {
-      processedFiles.add(path);
-
-      try {
-        // Fetch the imported file
-        const response = await fetch(path);
-        const importedCode = await response.text();
-
-        // Process the imported file recursively
-        const processedImport = await processCodeAndDependencies(
-          importedCode,
-          processedFiles
-        );
-
-        // Add to import map
-        updateImportMap(path, processedImport);
-      } catch (error) {
-        console.error(`Error processing import ${path}:`, error);
-      }
-    }
-  }
-
-  return processedCode;
-}
-
-// Update the import map
-function updateImportMap(path, processedCode) {
-  const importMap = document.querySelector('script[type="importmap"]');
-  const imports = JSON.parse(importMap.textContent).imports;
-
-  // Create blob URL for the processed code
-  const blob = new Blob([processedCode], { type: "text/javascript" });
-  const blobUrl = URL.createObjectURL(blob);
-
-  // Add to import map
-  imports[path] = blobUrl;
-  importMap.textContent = JSON.stringify({ imports });
-}
-
 class JSXParser {
   constructor(code) {
     this.code = code;
@@ -420,13 +324,9 @@ class JSXParser {
           : /^[A-Z]/.test(parsedItem.tagName)
           ? parsedItem.tagName
           : `"${parsedItem.tagName}"`;
-      return elementName == "React.Fragment"
-        ? `React.Fragment(${
-            childrenCode ? "[" + childrenCode + "]" : "[]"
-          })`
-        : `React.createElement(${elementName}, ${
-            attrs ? `{${attrs}}` : "null"
-          }${childrenCode ? ", " + childrenCode : ""})`;
+      return `React.createElement(${elementName}, ${attrs ? `{${attrs}}` : "null"}${
+        childrenCode ? ", " + childrenCode : ""
+      })`;
     }
 
     return "";
@@ -447,11 +347,27 @@ class JSXParser {
   }
 }
 
-// Simple process function (placeholder)
-function process(code) {
-  // For now, return the code as is
-  return new JSXParser(code).parse();
-}
-
-// Start preprocessing when DOM is loaded
-document.addEventListener("DOMContentLoaded", initPreprocessing);
+let code = `
+<div/>
+<   div  />
+return toggle ? (
+  <div>
+    <F name="osama" s={24} key={1} />
+    <button
+      onClick={() => {
+        console.log("press");
+        setToggle(false);
+      }}
+    >
+      "click me"
+    </button>
+    "test"
+  </div>
+) : (
+  <div>'Null'</div>
+);
+(<App/>)
+render(<App/>, document.getElementById("root"));
+`;
+console.log([1,2,[3,4],5].flat())
+console.log(new JSXParser(code).parse());

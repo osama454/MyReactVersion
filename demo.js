@@ -11,7 +11,7 @@ import {
   useCallback,
   memo,
   useMemo,
-}from './react.js';
+} from "./react.js";
 
 function F({ name, s }) {
   const [count, setCount] = useState(s);
@@ -40,42 +40,32 @@ function App() {
   // }, []);
 
   // Conditional rendering using createElement:
-  return toggle
-    ? createElement(
-        "div",
-        null,
-        createElement(F, { name: "osama", s: 24, key: 1 }),
-        createElement(
-          "button",
-          {
-            onClick: () => {
-              console.log("press");
-              setToggle(false);
-            },
-          },
-          "click me"
-        ),
-        "test"
-        // createElement(F, { name: "adel", s: 61,  key:2})
-      )
-    : createElement(
-        "div",
-        null,
-        "Null"
-        // createElement(F, { name: "adel", s: 61,  key:2 }),
-        // createElement(F, { name: "osama", s: 24 ,  key: 1})
-      );
-}
-
-function test() {
-  return createElement(
-    "button",
-    {onClick: ()=>{
-      console.log("click");
-    }},
-   'click'
+  return toggle ? (
+    <div>
+      <F name="osama" s={24} key={1} />
+      <button
+        onClick={() => {
+          console.log("press");
+          setToggle(false);
+        }}
+      >
+        "click me"
+      </button>
+      "test"
+    </div>
+  ) : (
+    <div>'Null'</div>
   );
 }
 
+function Test() {
+  return (
+    <div>
+      <>osama</>
+      adel
+    </div>
+  );
+}
+<App />;
 // Initialize the app
-render(createElement(App), document.getElementById("root"));
+render(<>osama</>, document.getElementById("root"));
