@@ -6,7 +6,7 @@ class JSXParser {
   }
 
   parse() {
-    let result = '';
+    let result = "";
     while (this.pos < this.length) {
       if (this.peek() === '"' || this.peek() === "'" || this.peek() === "`") {
         result += this.parseStringLiteral();
@@ -354,7 +354,31 @@ function preprocess(code) {
 }
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.url.endsWith(".jsx") || event.request.url.endsWith(".js"))
+  const request = event.request;
+
+  // Check if the request is for a CSS file
+  if (request.destination === "style" || request.url.endsWith(".css")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => response.text())
+        .then((css) => {
+          // Create a script that injects the CSS into the DOM
+          const scriptContent = `
+          const style = document.createElement('style');
+          style.textContent = \`${css}\`;
+          document.head.appendChild(style);
+        `;
+
+          // Return the script as a response
+          return new Response(scriptContent, {
+            headers: { "Content-Type": "application/javascript" },
+          });
+        })
+    );
+  } else if (
+    event.request.url.endsWith(".jsx") ||
+    event.request.url.endsWith(".js")
+  )
     event.respondWith(
       fetch(event.request).then((networkResponse) =>
         networkResponse.text().then(
