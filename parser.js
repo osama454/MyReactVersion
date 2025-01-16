@@ -1,22 +1,27 @@
 // preprocessor.js
-
+let moduleScripts = [];
 // Main function to start the preprocessing
 async function initPreprocessing() {
   // Query all scripts with type 'text/process'
   const processScripts = document.querySelectorAll('script[type="text/jsx"]');
 
-  // Create import map element
-  const importMap = document.createElement("script");
-  importMap.type = "importmap";
-  importMap.textContent = JSON.stringify({ imports: {} });
-  document.head.appendChild(importMap);
-
   // Process each script
   for (const script of processScripts) {
     await processScript(script);
   }
+  // updateImportMap();
+  createModules();
 }
-
+function createModules() {
+  for ([processedCode, script] of moduleScripts) {
+    const newScript = document.createElement("script");
+    newScript.type = "module";
+    newScript.textContent = processedCode;
+    if (script.parentNode && script.parentNode.contains(script)) {
+      script.parentNode.replaceChild(newScript, script);
+    }
+  }
+}
 // Process individual script
 async function processScript(script) {
   let sourceCode = "";
@@ -33,65 +38,10 @@ async function processScript(script) {
   }
 
   // Process the source code
-  const processedCode = await processCodeAndDependencies(sourceCode);
+  const processedCode = process(sourceCode);
 
   // Replace the original script with processed version
-  const newScript = document.createElement("script");
-  newScript.type = "module";
-  newScript.textContent = processedCode;
-  if (script.parentNode && script.parentNode.contains(script)) {
-    script.parentNode.replaceChild(newScript, script);
-  }
-}
-
-// Process code and handle dependencies recursively
-async function processCodeAndDependencies(code, processedFiles = new Set()) {
-  // Process the current code
-  let processedCode = process(code);
-
-  // Find all import statements
-  const importRegex = /import\s+(?:[\w\s{},]*\s+from\s+)?['"]([^'"]+)['"]/g;
-  const imports = [...processedCode.matchAll(importRegex)];
-
-  // Process each import
-  for (const [, path] of imports) {
-    if (!processedFiles.has(path)) {
-      processedFiles.add(path);
-
-      try {
-        // Fetch the imported file
-        const response = await fetch(path);
-        const importedCode = await response.text();
-
-        // Process the imported file recursively
-        const processedImport = await processCodeAndDependencies(
-          importedCode,
-          processedFiles
-        );
-
-        // Add to import map
-        updateImportMap(path, processedImport);
-      } catch (error) {
-        console.error(`Error processing import ${path}:`, error);
-      }
-    }
-  }
-
-  return processedCode;
-}
-
-// Update the import map
-function updateImportMap(path, processedCode) {
-  const importMap = document.querySelector('script[type="importmap"]');
-  const imports = JSON.parse(importMap.textContent).imports;
-
-  // Create blob URL for the processed code
-  const blob = new Blob([processedCode], { type: "text/javascript" });
-  const blobUrl = URL.createObjectURL(blob);
-
-  // Add to import map
-  imports[path] = blobUrl;
-  importMap.textContent = JSON.stringify({ imports });
+  moduleScripts.push([processedCode, script]);
 }
 
 class JSXParser {
@@ -421,9 +371,7 @@ class JSXParser {
           ? parsedItem.tagName
           : `"${parsedItem.tagName}"`;
       return elementName == "React.Fragment"
-        ? `React.Fragment(${
-            childrenCode ? "[" + childrenCode + "]" : "[]"
-          })`
+        ? `React.Fragment(${childrenCode ? "[" + childrenCode + "]" : "[]"})`
         : `React.createElement(${elementName}, ${
             attrs ? `{${attrs}}` : "null"
           }${childrenCode ? ", " + childrenCode : ""})`;
@@ -454,4 +402,5 @@ function process(code) {
 }
 
 // Start preprocessing when DOM is loaded
+// initPreprocessing()
 document.addEventListener("DOMContentLoaded", initPreprocessing);
