@@ -1,5 +1,5 @@
-import React, { render, useState, useEffect } from "../react.js";
-import "../styles.css";
+import React, { render, useState, useEffect } from "react";
+import "./app.css";
 
 function NoteForm({ onSubmit, editingNote, onUpdate }) {
   const [title, setTitle] = useState("");

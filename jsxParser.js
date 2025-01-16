@@ -10,3 +10,17 @@ if ("serviceWorker" in navigator) {
     }
   });
 }
+
+const importMapScript = document.createElement("script");
+
+importMapScript.type = "importmap";
+
+const importMap = {
+  imports: {
+    react: "./react.js",
+  },
+};
+
+importMapScript.textContent = JSON.stringify(importMap, null, 2);
+
+document.head.insertBefore(importMapScript, document.head.firstChild);
