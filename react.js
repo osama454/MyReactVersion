@@ -23,8 +23,10 @@ const React = (() => {
       keys: {},
       type,
       render: function () {
-        const element = document.createElement(type);
-        let component = currentInstance;
+        const element =
+          type == "fragment"
+            ? document.createDocumentFragment()
+            : document.createElement(type);
         let unVisited = { ...this.keys };
         if (props) {
           Object.entries(props).forEach(([key, value]) => {
@@ -346,8 +348,8 @@ const React = (() => {
     }
     return true;
   }
-  function Fragment(children=[]){
-    return createElement('fragment', null, ...children)
+  function Fragment(children = []) {
+    return createElement("fragment", null, ...children);
   }
   return {
     createElement,
@@ -361,7 +363,7 @@ const React = (() => {
     useCallback,
     useMemo,
     render,
-    Fragment
+    Fragment,
   };
 })();
 

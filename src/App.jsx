@@ -123,18 +123,20 @@ export default function App() {
   };
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>📝 Notes App</h1>
-      </header>
-      <main className="app-main">
-        <NoteForm
-          onSubmit={addNote}
-          editingNote={editingNote}
-          onUpdate={updateNote}
-        />
-        <NotesList notes={notes} onDelete={deleteNote} onEdit={editNote} />
-      </main>
-    </div>
+    <>
+      <div className="app">
+        <header className="app-header">
+          <h1>📝 Notes App</h1>
+        </header>
+        <main className="app-main">
+          <NoteForm
+            onSubmit={addNote}
+            editingNote={editingNote}
+            onUpdate={updateNote}
+          />
+          <NotesList notes={notes} onDelete={deleteNote} onEdit={editNote} />
+        </main>
+      </div>
+    </>
   );
 }
