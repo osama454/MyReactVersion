@@ -1,49 +1,3 @@
-// preprocessor.js
-let moduleScripts = [];
-// Main function to start the preprocessing
-async function initPreprocessing() {
-  // Query all scripts with type 'text/process'
-  const processScripts = document.querySelectorAll('script[type="text/jsx"]');
-
-  // Process each script
-  for (const script of processScripts) {
-    await processScript(script);
-  }
-  // updateImportMap();
-  createModules();
-}
-function createModules() {
-  for ([processedCode, script] of moduleScripts) {
-    const newScript = document.createElement("script");
-    newScript.type = "module";
-    newScript.textContent = processedCode;
-    if (script.parentNode && script.parentNode.contains(script)) {
-      script.parentNode.replaceChild(newScript, script);
-    }
-  }
-}
-// Process individual script
-async function processScript(script) {
-  let sourceCode = "";
-
-  // Get source from src attribute if exists
-  if (script.src) {
-    const response = await fetch(script.src);
-    sourceCode += await response.text();
-  }
-
-  // Add inline code if exists
-  if (script.textContent) {
-    sourceCode += script.textContent;
-  }
-
-  // Process the source code
-  const processedCode = process(sourceCode);
-
-  // Replace the original script with processed version
-  moduleScripts.push([processedCode, script]);
-}
-
 class JSXParser {
   constructor(code) {
     this.code = code;
@@ -52,7 +6,7 @@ class JSXParser {
   }
 
   parse() {
-    let result = 'import React from "./react.js";\n';
+    let result = '';
     while (this.pos < this.length) {
       if (this.peek() === '"' || this.peek() === "'" || this.peek() === "`") {
         result += this.parseStringLiteral();
@@ -395,12 +349,20 @@ class JSXParser {
   }
 }
 
-// Simple process function (placeholder)
-function process(code) {
-  // For now, return the code as is
+function preprocess(code) {
   return new JSXParser(code).parse();
 }
 
-// Start preprocessing when DOM is loaded
-// initPreprocessing()
-document.addEventListener("DOMContentLoaded", initPreprocessing);
+self.addEventListener("fetch", (event) => {
+  if (event.request.url.endsWith(".jsx") || event.request.url.endsWith(".js"))
+    event.respondWith(
+      fetch(event.request).then((networkResponse) =>
+        networkResponse.text().then(
+          (code) =>
+            new Response(preprocess(code), {
+              headers: { "Content-Type": "application/javascript" },
+            })
+        )
+      )
+    );
+});
